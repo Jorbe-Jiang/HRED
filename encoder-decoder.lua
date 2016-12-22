@@ -102,8 +102,8 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 		local train_loss_1 = criterion:forward(dec_outputs[1], dec_tar_outputs[1])
 		local grad_output_1 = criterion:backward(dec_outputs[1], dec_tar_outputs[1])
 
-        --print(torch.max(grad_output_1))
-        --print(torch.min(grad_output_1))
+        	--print(torch.max(grad_output_1))
+        	--print(torch.min(grad_output_1))
 		if opt.grad_clip > 0 then grad_output_1:clamp(-opt.grad_clip, opt.grad_clip) end
 
 		dec:get(1):get(1):backward(dec_inputs[1], grad_output_1)
@@ -141,8 +141,8 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 		local train_loss_2 = criterion:forward(dec_outputs[2], dec_tar_outputs[2])
 		local grad_output_2 = criterion:backward(dec_outputs[2], dec_tar_outputs[2])
 
-        --print(torch.max(grad_output_2))
-        --print(torch.min(grad_output_2))
+        	--print(torch.max(grad_output_2))
+        	--print(torch.min(grad_output_2))
 		if opt.grad_clip > 0 then grad_output_2:clamp(-opt.grad_clip, opt.grad_clip) end
 
 		dec:get(1):get(2):backward(dec_inputs[2], grad_output_2)
@@ -269,44 +269,44 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 				end
 			end
             
-            --[[
-            print'1111111111111111'
-            print(torch.sum(params))
-            print(torch.max(params))
-            print(torch.min(params))
-            print(torch.max(grad_params))
-            print(torch.min(grad_params))
-            print'111111111111111111111'
-            ]]--
+		    	--[[
+		    	print'1111111111111111'
+		    	print(torch.sum(params))
+		    	print(torch.max(params))
+		    	print(torch.min(params))
+		    	print(torch.max(grad_params))
+		    	print(torch.min(grad_params))
+		    	print'111111111111111111111'
+		    	]]--
 
 			--update params of decoder 1
 			local _1, loss_1 = optim[opt.optimizer](feval_1, params, optim_state)
             
-            --[[
-            print'222222222222222222222222'
-            print(torch.sum(params))
-            print(torch.max(params))
-            print(torch.min(params))
-            print(torch.max(grad_params))
-            print(torch.min(grad_params))
-            print'22222222222222222'
-            ]]--
+		    	--[[
+		    	print'222222222222222222222222'
+		    	print(torch.sum(params))
+		    	print(torch.max(params))
+		    	print(torch.min(params))
+		    	print(torch.max(grad_params))
+		    	print(torch.min(grad_params))
+		    	print'22222222222222222'
+		    	]]--
             
-            collectgarbage()
+            		collectgarbage()
 			--update params of decoder 2
 			local _2, loss_2 = optim[opt.optimizer](feval_2, params, optim_state)
             
-            --[[
-            print'3333333333333333333333'
-            print(torch.sum(params))
-            print(torch.max(params))
-            print(torch.min(params))
-            print(torch.max(grad_params))
-            print(torch.min(grad_params))
-            print'33333333333333333333333'
-            ]]--
+            		--[[
+            		print'3333333333333333333333'
+            		print(torch.sum(params))
+            		print(torch.max(params))
+            		print(torch.min(params))
+            		print(torch.max(grad_params))
+            		print(torch.min(grad_params))
+            		print'33333333333333333333333'
+            		]]--
 
-            collectgarbage()
+            		collectgarbage()
 			local norm_loss_1 = loss_1[1]*opt.batch_size/torch.sum(torch.gt(dec_inputs[1],0))
 			local norm_loss_2 = loss_2[1]*opt.batch_size/torch.sum(torch.gt(dec_inputs[2],0))
 			local norm_train_loss = norm_loss_1 + norm_loss_2
@@ -359,18 +359,18 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 
 			--early stoping
 			if prev_eval_loss > 0 then
-                if curr_eval_loss > prev_eval_loss * 3 then
-                    print('Loss is exploding, early stoping...')
-                    os.exit()
-                end
-            end
+                		if curr_eval_loss > prev_eval_loss * 3 then
+                    			print('Loss is exploding, early stoping...')
+                    			os.exit()
+                		end
+            		end
 
-            if prev_eval_loss < 0 then
-                if curr_eval_loss > prev_eval_loss/3 then
-                    print('Loss is exploding, early stoping...')
-                    os.exit()
-                end
-            end
+            		if prev_eval_loss < 0 then
+                		if curr_eval_loss > prev_eval_loss/3 then
+				    print('Loss is exploding, early stoping...')
+				    os.exit()
+               		 	end
+            		end
 
 			--start decay learning rate
 			if curr_eval_loss > prev_eval_loss then
