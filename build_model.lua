@@ -14,12 +14,6 @@ function RNN_elem(recurrence)
 	hred_enc_embeddings.weight = emb.weight:clone()
 	utterance_rnn:add(hred_enc_embeddings)
 
-<<<<<<< HEAD
-=======
-    	--batch norm
-    	--utterance_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.word_dim)))
-
->>>>>>> b2b147c3ced52f13fc816d49a11cbe2ee0faeec7
 	local rnn = recurrence(opt.word_dim, opt.enc_hidden_size)
 	utterance_rnn:add(nn.Sequencer(rnn:maskZero(1)))
 
@@ -87,25 +81,14 @@ function build_decoder(recurrence)
 	for i = 1, 2 do
 		local dec_rnn = nn.Sequential()
 		dec_rnn:add(dec_embeddings)	
-<<<<<<< HEAD
         
 		local rnn = recurrence(opt.word_dim, opt.dec_hidden_size)
 		table.insert(dec_rnns, rnn)
 		dec_rnn:add(nn.Sequencer(rnn:maskZero(1)))
         
-        --batch norm
-       	--dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.dec_hidden_size)))
+        	--batch norm
+       		--dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.dec_hidden_size)))
 
-=======
-         	--batch norm
-        	--dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.word_dim)))
-
-		local rnn = recurrence(opt.word_dim, opt.dec_hidden_size)
-		table.insert(dec_rnns, rnn)
-		dec_rnn:add(nn.Sequencer(rnn:maskZero(1)))
-         	--batch norm
-        	--dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.dec_hidden_size)))
->>>>>>> b2b147c3ced52f13fc816d49a11cbe2ee0faeec7
 		if opt.drop_rate > 0 then
 			dec_rnn:add(nn.Sequencer(nn.Dropout(opt.drop_rate)))
 		end
@@ -146,11 +129,7 @@ function build()
 		assert(path.exists(opt.load_model_file), 'check the model file path')
 		print('Loading model from: '..opt.load_model_file..'...')
 		local model_and_opts = torch.load(opt.load_model_file)
-<<<<<<< HEAD
 		local model, model_opt = model_and_opts[1], model_and_opts[2]		
-=======
-		local model, model_opt = model_and_opts[1], model_and_opts[2]
->>>>>>> b2b147c3ced52f13fc816d49a11cbe2ee0faeec7
 		
 		--load the model components
 		hred_enc = model[1]:double()
@@ -176,11 +155,7 @@ function build()
 	Model:add(hred_enc)
 	Model:add(dec)
 	local params, grad_params = Model:getParameters()
-<<<<<<< HEAD
 
-=======
-	
->>>>>>> b2b147c3ced52f13fc816d49a11cbe2ee0faeec7
 	if opt.gpu_id >= 0 then
 		params:cuda()
 		grad_params:cuda()
