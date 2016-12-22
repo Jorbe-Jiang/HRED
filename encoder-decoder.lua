@@ -241,7 +241,7 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 	local train_losses = {}
 	local eval_losses = {}
 	local prev_eval_loss, curr_eval_loss
-	local optim_state = {learningRate = opt.lr}
+	local optim_state = {learningRate = opt.lr, weightDecays = 1e-2, momentum = 1e-4}
 	local start_time = os.time() --begin time
 
 	for i = 1, opt.num_epochs do
