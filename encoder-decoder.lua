@@ -333,6 +333,15 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 				hred_enc_inputs = {valid_U1s_batches_enc[k], valid_U2s_batches_enc[k]}
 				dec_inputs = {valid_U2s_batches_dec[k], valid_U3s_batches_dec[k]}
 				dec_tar_outputs = {valid_U2s_batches_tar[k], valid_U3s_batches_tar[k]}
+
+				if opt.gpu_id >= 0 then
+					for i = 1, 2 do
+						hred_enc_inputs[i] = hred_enc_inputs[i]:int():cuda()
+						dec_inputs[i] = dec_inputs[i]:int():cuda()
+						dec_tar_outputs[i] = dec_tar_outputs[i]:int():cuda()
+					end
+				end
+				
 				local norm_e_loss = eval_loss(params)
 				collectgarbage()
 				print("eval loss: ", norm_e_loss)

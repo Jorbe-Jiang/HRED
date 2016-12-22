@@ -14,9 +14,6 @@ function RNN_elem(recurrence)
 	hred_enc_embeddings.weight = emb.weight:clone()
 	utterance_rnn:add(hred_enc_embeddings)
 
-    --batch norm
-    --utterance_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.word_dim)))
-
 	local rnn = recurrence(opt.word_dim, opt.enc_hidden_size)
 	utterance_rnn:add(nn.Sequencer(rnn:maskZero(1)))
 
@@ -69,9 +66,7 @@ function build_hred_encoder(recurrence)
 	hred_enc:add(context_layer)
 
 	return hred_enc, hred_enc_rnn
-	
 end
-
 
 --build decoders(utterance 1 decoder and utterance 2 decoder)
 function build_decoder(recurrence)
@@ -86,14 +81,14 @@ function build_decoder(recurrence)
 	for i = 1, 2 do
 		local dec_rnn = nn.Sequential()
 		dec_rnn:add(dec_embeddings)	
-         --batch norm
-        --dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.word_dim)))
-
+        
 		local rnn = recurrence(opt.word_dim, opt.dec_hidden_size)
 		table.insert(dec_rnns, rnn)
 		dec_rnn:add(nn.Sequencer(rnn:maskZero(1)))
-         --batch norm
-        --dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.dec_hidden_size)))
+        
+        --batch norm
+       	--dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.dec_hidden_size)))
+
 		if opt.drop_rate > 0 then
 			dec_rnn:add(nn.Sequencer(nn.Dropout(opt.drop_rate)))
 		end
@@ -107,7 +102,6 @@ function build_decoder(recurrence)
 	
 	return dec, dec_rnns
 end
-
 
 --build model 
 function build()
@@ -129,15 +123,13 @@ function build()
 	-- whether to load pre-trained model from load_model_file
 	if opt.load_model == 0 then
 		hred_enc, hred_enc_rnn = build_hred_encoder(recurrence)
-		dec, dec_rnns = build_decoder(recurrence)
-		
+		dec, dec_rnns = build_decoder(recurrence)	
 	else
 		--load the trained model
 		assert(path.exists(opt.load_model_file), 'check the model file path')
 		print('Loading model from: '..opt.load_model_file..'...')
 		local model_and_opts = torch.load(opt.load_model_file)
-		local model, model_opt = model_and_opts[1], model_and_opts[2]
-		
+		local model, model_opt = model_and_opts[1], model_and_opts[2]		
 		
 		--load the model components
 		hred_enc = model[1]:double()
@@ -147,8 +139,7 @@ function build()
 		dec_rnns[2] = model[4][2]:double()
 		--batch_size may be changed
 		hred_enc:remove(3) 
-		hred_enc:insert(nn.Reshape(2, opt.batch_size, opt.enc_hidden_size), 3)
-		
+		hred_enc:insert(nn.Reshape(2, opt.batch_size, opt.enc_hidden_size), 3)	
 	end
 	
 	local layers = {hred_enc, dec}
@@ -165,7 +156,6 @@ function build()
 	Model:add(dec)
 	local params, grad_params = Model:getParameters()
 
-	
 	if opt.gpu_id >= 0 then
 		params:cuda()
 		grad_params:cuda()
