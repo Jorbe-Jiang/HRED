@@ -14,14 +14,14 @@ function RNN_elem(recurrence)
 	hred_enc_embeddings.weight = emb.weight:clone()
 	utterance_rnn:add(hred_enc_embeddings)
 
-    --batch norm
-    --utterance_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.word_dim)))
+    	--batch norm
+    	--utterance_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.word_dim)))
 
 	local rnn = recurrence(opt.word_dim, opt.enc_hidden_size)
 	utterance_rnn:add(nn.Sequencer(rnn:maskZero(1)))
 
-    --batch norm
-    --utterance_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.enc_hidden_size)))
+    	--batch norm
+    	--utterance_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.enc_hidden_size)))
 
 	if opt.drop_rate > 0 then
 		utterance_rnn:add(nn.Sequencer(nn.Dropout(opt.drop_rate)))
@@ -60,8 +60,8 @@ function build_hred_encoder(recurrence)
 	hred_enc_rnn = recurrence(opt.enc_hidden_size, opt.context_hidden_size)
 	context_layer:add(nn.Sequencer(hred_enc_rnn:maskZero(1)))
 
-    --batch norm
-    --context_layer:add(nn.Sequencer(nn.BatchNormalization(opt.context_hidden_size)))
+    	--batch norm
+    	--context_layer:add(nn.Sequencer(nn.BatchNormalization(opt.context_hidden_size)))
     
 	if opt.drop_rate > 0 then
 		context_layer:add(nn.Sequencer(nn.Dropout(opt.drop_rate)))
@@ -71,7 +71,6 @@ function build_hred_encoder(recurrence)
 	return hred_enc, hred_enc_rnn
 	
 end
-
 
 --build decoders(utterance 1 decoder and utterance 2 decoder)
 function build_decoder(recurrence)
@@ -86,14 +85,14 @@ function build_decoder(recurrence)
 	for i = 1, 2 do
 		local dec_rnn = nn.Sequential()
 		dec_rnn:add(dec_embeddings)	
-         --batch norm
-        --dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.word_dim)))
+         	--batch norm
+        	--dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.word_dim)))
 
 		local rnn = recurrence(opt.word_dim, opt.dec_hidden_size)
 		table.insert(dec_rnns, rnn)
 		dec_rnn:add(nn.Sequencer(rnn:maskZero(1)))
-         --batch norm
-        --dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.dec_hidden_size)))
+         	--batch norm
+        	--dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.dec_hidden_size)))
 		if opt.drop_rate > 0 then
 			dec_rnn:add(nn.Sequencer(nn.Dropout(opt.drop_rate)))
 		end
@@ -129,15 +128,13 @@ function build()
 	-- whether to load pre-trained model from load_model_file
 	if opt.load_model == 0 then
 		hred_enc, hred_enc_rnn = build_hred_encoder(recurrence)
-		dec, dec_rnns = build_decoder(recurrence)
-		
+		dec, dec_rnns = build_decoder(recurrence)	
 	else
 		--load the trained model
 		assert(path.exists(opt.load_model_file), 'check the model file path')
 		print('Loading model from: '..opt.load_model_file..'...')
 		local model_and_opts = torch.load(opt.load_model_file)
 		local model, model_opt = model_and_opts[1], model_and_opts[2]
-		
 		
 		--load the model components
 		hred_enc = model[1]:double()
@@ -164,7 +161,6 @@ function build()
 	Model:add(hred_enc)
 	Model:add(dec)
 	local params, grad_params = Model:getParameters()
-
 	
 	if opt.gpu_id >= 0 then
 		params:cuda()
