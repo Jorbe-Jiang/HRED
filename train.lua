@@ -6,7 +6,6 @@ require 'cutorch'
 require 'string';
 
 
-
 cmd = torch.CmdLine()
 cmd:text()
 cmd:text('Train a HRED model')
@@ -70,12 +69,11 @@ if opt.gpu_id >= 0 then
 		cutorch.manualSeed(opt.seed)
 	else
 		print('If cutorch and cunn are installed, your CUDA toolkit may be improperly configured.')
-        	print('Check your CUDA toolkit installation, rebuild cutorch and cunn, and try again.')
-        	print('Falling back on CPU mode')
-        	opt.gpu_id = -1 -- overwrite user setting
+        print('Check your CUDA toolkit installation, rebuild cutorch and cunn, and try again.')
+        print('Falling back on CPU mode')
+        opt.gpu_id = -1 -- overwrite user setting
 	end
 end
-
 
 
 function train_model()
@@ -90,8 +88,9 @@ function train_model()
 	]]--
 
 	npy4th = require 'npy4th';
-	local funcs = loadfile('build_model.lua')
-	funcs()
+	
+	require 'build_model'
+	--local model, parallel_criterion = build()
 	local model, criterion = build()
 
 	require 'encoder-decoder'
@@ -102,6 +101,7 @@ function train_model()
 	local batches_valid_data = torch.load('./datas/'..tostring(opt.batch_size)..'_batches_valid.t7')
 	print('Load datasets successfully ...')
 	
+	--train(model, parallel_criterion, batches_train_data, batches_valid_data)
 	train(model, criterion, batches_train_data, batches_valid_data)
 end
 

@@ -58,6 +58,7 @@ function translate_to_word(U3s_words_idx)
 end
 
 --training 
+--function train(model, parallel_criterion, batches_train_data, batches_valid_data)
 function train(model, criterion, batches_train_data, batches_valid_data)
 	print('Begin to train...')
 	
@@ -77,6 +78,57 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 	dec_rnns = model[4]
 	params = model[5]
 	grad_params = model[6]
+
+	--use parallel criterion, and just backward decoder 2 gradients to update context layer,encoder 1 and encoder 2 
+	function feval(x)
+		assert(x == params)
+		if x == nil then
+			print('Notes: params is nil!!!')
+			os.exit()
+		end
+		
+		--reset params gradients
+		grad_params:zero()
+	
+		--forward pass and backward pass
+		hred_enc_outputs = hred_enc:forward(hred_enc_inputs)
+		forward_connect(hred_enc_rnn, dec_rnns, 1)
+		forward_connect(hred_enc_rnn, dec_rnns, 2)
+		dec_outputs = dec:forward(dec_inputs)
+		
+		if opt.gpu_id >= 0 then
+			for i = 1, 2 do
+				dec_outputs[i] = dec_outputs[i]:cuda()
+			end
+		end
+		collectgarbage()
+
+		local train_loss = parallel_criterion:forward(dec_outputs, dec_tar_outputs)
+		local grad_output = parallel_criterion:backward(dec_outputs, dec_tar_outputs)
+		
+		if opt.grad_clip > 0 then
+			for i = 1, 2 do
+				grad_output[i]:clamp(-opt.grad_clip, opt.grad_clip)
+			end
+		end
+		
+        dec:backward(dec_inputs, grad_output)
+
+        --[[
+		backward_connect(hred_enc_rnn, dec_rnns, 1)
+		local zero_tensor = opt.gpu_id >= 0 and torch.CudaTensor(hred_enc_outputs):zero() or torch.Tensor(hred_enc_outputs):zero()
+		hred_enc:backward(hred_enc_inputs, zero_tensor) 
+		]]--
+		backward_connect(hred_enc_rnn, dec_rnns, 2)
+		local zero_tensor = opt.gpu_id >= 0 and torch.CudaTensor(hred_enc_outputs):zero() or torch.Tensor(hred_enc_outputs):zero()
+		--hred_enc:forward(hred_enc_inputs)
+		hred_enc:backward(hred_enc_inputs, zero_tensor) 
+		
+		--cilp gradient 
+		if opt.grad_clip > 0 then grad_params:clamp(-opt.grad_clip, opt.grad_clip) end
+
+		return train_loss, grad_params
+	end
 
 	--update decoder 1
 	function feval_1(x)
@@ -102,8 +154,8 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 		local train_loss_1 = criterion:forward(dec_outputs[1], dec_tar_outputs[1])
 		local grad_output_1 = criterion:backward(dec_outputs[1], dec_tar_outputs[1])
 
-        	--print(torch.max(grad_output_1))
-        	--print(torch.min(grad_output_1))
+        --print(torch.max(grad_output_1))
+        --print(torch.min(grad_output_1))
 		if opt.grad_clip > 0 then grad_output_1:clamp(-opt.grad_clip, opt.grad_clip) end
 
 		dec:get(1):get(1):backward(dec_inputs[1], grad_output_1)
@@ -141,8 +193,8 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 		local train_loss_2 = criterion:forward(dec_outputs[2], dec_tar_outputs[2])
 		local grad_output_2 = criterion:backward(dec_outputs[2], dec_tar_outputs[2])
 
-        	--print(torch.max(grad_output_2))
-        	--print(torch.min(grad_output_2))
+        --print(torch.max(grad_output_2))
+        --print(torch.min(grad_output_2))
 		if opt.grad_clip > 0 then grad_output_2:clamp(-opt.grad_clip, opt.grad_clip) end
 
 		dec:get(1):get(2):backward(dec_inputs[2], grad_output_2)
@@ -268,50 +320,53 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 					dec_tar_outputs[i] = dec_tar_outputs[i]:int():cuda()
 				end
 			end
+
+			-- if use the parallel criterion and feval function
+			--local _, loss = optim[opt.optimizer](feval, params, optim_state)
             
-		    	--[[
-		    	print'1111111111111111'
-		    	print(torch.sum(params))
-		    	print(torch.max(params))
-		    	print(torch.min(params))
-		    	print(torch.max(grad_params))
-		    	print(torch.min(grad_params))
-		    	print'111111111111111111111'
-		    	]]--
+            --[[
+            print'1111111111111111'
+            print(torch.sum(params))
+            print(torch.max(params))
+            print(torch.min(params))
+            print(torch.max(grad_params))
+            print(torch.min(grad_params))
+            print'111111111111111111111'
+            ]]--
 
 			--update params of decoder 1
 			local _1, loss_1 = optim[opt.optimizer](feval_1, params, optim_state)
             
-		    	--[[
-		    	print'222222222222222222222222'
-		    	print(torch.sum(params))
-		    	print(torch.max(params))
-		    	print(torch.min(params))
-		    	print(torch.max(grad_params))
-		    	print(torch.min(grad_params))
-		    	print'22222222222222222'
-		    	]]--
+            --[[
+            print'222222222222222222222222'
+            print(torch.sum(params))
+            print(torch.max(params))
+            print(torch.min(params))
+            print(torch.max(grad_params))
+            print(torch.min(grad_params))
+            print'22222222222222222'
+            ]]--
             
-            		collectgarbage()
+            collectgarbage()
 			--update params of decoder 2
 			local _2, loss_2 = optim[opt.optimizer](feval_2, params, optim_state)
             
-            		--[[
-            		print'3333333333333333333333'
-            		print(torch.sum(params))
-            		print(torch.max(params))
-            		print(torch.min(params))
-            		print(torch.max(grad_params))
-            		print(torch.min(grad_params))
-            		print'33333333333333333333333'
-            		]]--
+            --[[
+            print'3333333333333333333333'
+            print(torch.sum(params))
+            print(torch.max(params))
+            print(torch.min(params))
+            print(torch.max(grad_params))
+            print(torch.min(grad_params))
+            print'33333333333333333333333'
+            ]]--
 
-            		collectgarbage()
+            collectgarbage()
 			local norm_loss_1 = loss_1[1]*opt.batch_size/torch.sum(torch.gt(dec_inputs[1],0))
 			local norm_loss_2 = loss_2[1]*opt.batch_size/torch.sum(torch.gt(dec_inputs[2],0))
 			local norm_train_loss = norm_loss_1 + norm_loss_2
 			
-			if norm_train_loss < -0.2 or i % opt.print_every == 0 then
+			if norm_train_loss < 30 or i % opt.print_every == 0 then
 				print_pred_results()
 			end
 
@@ -341,7 +396,7 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 						dec_tar_outputs[i] = dec_tar_outputs[i]:int():cuda()
 					end
 				end
-				
+
 				local norm_e_loss = eval_loss(params)
 				collectgarbage()
 				print("eval loss: ", norm_e_loss)
@@ -359,18 +414,18 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 
 			--early stoping
 			if prev_eval_loss > 0 then
-                		if curr_eval_loss > prev_eval_loss * 3 then
-                    			print('Loss is exploding, early stoping...')
-                    			os.exit()
-                		end
-            		end
+                if curr_eval_loss > prev_eval_loss * 3 then
+                    print('Loss is exploding, early stoping...')
+                    os.exit()
+                end
+            end
 
-            		if prev_eval_loss < 0 then
-                		if curr_eval_loss > prev_eval_loss/3 then
-				    print('Loss is exploding, early stoping...')
-				    os.exit()
-               		 	end
-            		end
+            if prev_eval_loss < 0 then
+                if curr_eval_loss > prev_eval_loss/3 then
+                    print('Loss is exploding, early stoping...')
+                    os.exit()
+                end
+            end
 
 			--start decay learning rate
 			if curr_eval_loss > prev_eval_loss then

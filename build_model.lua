@@ -17,8 +17,8 @@ function RNN_elem(recurrence)
 	local rnn = recurrence(opt.word_dim, opt.enc_hidden_size)
 	utterance_rnn:add(nn.Sequencer(rnn:maskZero(1)))
 
-    	--batch norm
-    	--utterance_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.enc_hidden_size)))
+    --batch norm
+    --utterance_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.enc_hidden_size)))
 
 	if opt.drop_rate > 0 then
 		utterance_rnn:add(nn.Sequencer(nn.Dropout(opt.drop_rate)))
@@ -57,8 +57,8 @@ function build_hred_encoder(recurrence)
 	hred_enc_rnn = recurrence(opt.enc_hidden_size, opt.context_hidden_size)
 	context_layer:add(nn.Sequencer(hred_enc_rnn:maskZero(1)))
 
-    	--batch norm
-    	--context_layer:add(nn.Sequencer(nn.BatchNormalization(opt.context_hidden_size)))
+    --batch norm
+    --context_layer:add(nn.Sequencer(nn.BatchNormalization(opt.context_hidden_size)))
     
 	if opt.drop_rate > 0 then
 		context_layer:add(nn.Sequencer(nn.Dropout(opt.drop_rate)))
@@ -72,22 +72,22 @@ end
 function build_decoder(recurrence)
 	local dec = nn.Sequential()
 	local dec_rnns = {}  --decoder 1 rnn and decoder 2 rnn
-	local dec_embeddings = nn.LookupTableMaskZero(opt.vocab_size, opt.word_dim):setMaxNorm(2)
-	dec_embeddings.weight = emb.weight:clone()
 	
 	local par = nn.ParallelTable()
 
 	--build parallel decoders
 	for i = 1, 2 do
 		local dec_rnn = nn.Sequential()
+		local dec_embeddings = nn.LookupTableMaskZero(opt.vocab_size, opt.word_dim):setMaxNorm(2)
+		dec_embeddings.weight = emb.weight:clone()
 		dec_rnn:add(dec_embeddings)	
         
 		local rnn = recurrence(opt.word_dim, opt.dec_hidden_size)
 		table.insert(dec_rnns, rnn)
 		dec_rnn:add(nn.Sequencer(rnn:maskZero(1)))
         
-        	--batch norm
-       		--dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.dec_hidden_size)))
+        --batch norm
+       	--dec_rnn:add(nn.Sequencer(nn.BatchNormalization(opt.dec_hidden_size)))
 
 		if opt.drop_rate > 0 then
 			dec_rnn:add(nn.Sequencer(nn.Dropout(opt.drop_rate)))
@@ -116,7 +116,13 @@ function build()
 	
 	--criterion
 	local criterion = nn.SequencerCriterion(nn.MaskZeroCriterion(nn.ClassNLLCriterion(), 1))
-	
+	--[[
+	local parallel_criterion = nn.ParallelCriterion()
+	local criterion_1 = nn.SequencerCriterion(nn.MaskZeroCriterion(nn.ClassNLLCriterion(), 1))
+	local criterion_2 = nn.SequencerCriterion(nn.MaskZeroCriterion(nn.ClassNLLCriterion(), 1))
+	parallel_criterion:add(criterion_1):add(criterion_2)
+	]]--
+
 	local hred_enc, hred_enc_rnn, dec
 	local dec_rnns = {}
 	
@@ -150,6 +156,7 @@ function build()
 			layers[i]:cuda()
 		end
 		criterion:cuda()
+		--parallel_criterion:cuda()
 	end
 	local Model = nn.Sequential()
 	Model:add(hred_enc)
@@ -172,5 +179,6 @@ function build()
 	}
 	
 	print('Building model successfully...')
+	--return model, parallel_criterion
 	return model, criterion
 end
