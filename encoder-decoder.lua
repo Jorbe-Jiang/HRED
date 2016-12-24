@@ -457,6 +457,13 @@ function train(model, criterion, batches_train_data, batches_valid_data)
 			npy4th.savenpy(tmp_result_file, torch.Tensor(train_losses))
 			print('Evaluating end ...')
 			eval_losses = {}
+			if opt.gpu_id >= 0 then
+				hred_enc:cuda()
+				dec:cuda()
+				hred_enc_rnn:cuda()
+				dec_rnns[1]:cuda()
+				dec_rnns[2]:cuda()
+			end
 		end
 		collectgarbage()
 	end
